@@ -1,0 +1,799 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MagicCon Amsterdam 2026 - My Schedule</title>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0d0b1a;--surface:#16132b;--card:#1e1a35;--border:#2a2548;
+  --text:#e8e6f0;--text-dim:#9e9bb5;--gold:#ffc107;--accent:#7c4dff;
+  --slot-h:40px;
+}
+html{scrollbar-color:#2a2548 #0d0b1a}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Oxygen,Ubuntu,Cantarell,sans-serif;min-height:100vh}
+a{color:inherit;text-decoration:none}
+
+/* HEADER */
+.header{text-align:center;padding:18px 16px 10px;background:linear-gradient(135deg,#1a1040 0%,#0d0b1a 100%);border-bottom:2px solid var(--gold)}
+.header h1{font-size:1.6rem;color:var(--gold);letter-spacing:1px}
+.header .sub{font-size:.85rem;color:var(--text-dim);margin-top:4px}
+
+/* DAY TABS */
+.tabs{display:flex;justify-content:center;gap:6px;padding:12px 16px;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.tab{padding:8px 20px;border-radius:6px;cursor:pointer;font-weight:600;font-size:.9rem;border:1px solid var(--border);background:transparent;color:var(--text-dim);transition:all .15s}
+.tab:hover{border-color:var(--gold);color:var(--text)}
+.tab.active{background:var(--gold);color:#0d0b1a;border-color:var(--gold)}
+
+/* FILTER BAR */
+.filter-bar{position:sticky;top:52px;z-index:99;background:var(--surface);border-bottom:1px solid var(--border);padding:10px 16px}
+.filter-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px}
+.filter-header span{font-size:.8rem;color:var(--text-dim)}
+.filter-header .count{color:var(--gold);font-weight:600}
+.clear-btn{background:none;border:1px solid var(--border);color:var(--text-dim);padding:3px 10px;border-radius:4px;cursor:pointer;font-size:.75rem;transition:all .15s}
+.clear-btn:hover{border-color:var(--gold);color:var(--gold)}
+.tag-filters{display:flex;flex-wrap:wrap;gap:5px}
+.tag-btn{padding:3px 9px;border-radius:12px;font-size:.7rem;font-weight:500;cursor:pointer;border:1px solid;opacity:.55;transition:all .15s;white-space:nowrap}
+.tag-btn:hover{opacity:.85}
+.tag-btn.active{opacity:1;box-shadow:0 0 8px rgba(255,255,255,.15)}
+.tag-btn.fav::before{content:'\2605 ';font-size:.65rem}
+
+/* CALENDAR CONTAINER */
+.cal-wrap{display:flex;overflow-x:auto;padding:0 8px 20px;position:relative}
+.time-axis{width:60px;min-width:60px;padding-top:8px;position:sticky;left:0;z-index:10;background:var(--bg)}
+.time-label{height:var(--slot-h);display:flex;align-items:flex-start;justify-content:flex-end;padding-right:8px;font-size:.7rem;color:var(--text-dim);transform:translateY(-6px)}
+.grid-area{flex:1;position:relative;min-width:600px}
+.grid-lines{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none}
+.grid-line{position:absolute;left:0;right:0;height:1px;background:var(--border)}
+.grid-line.hour{background:rgba(255,255,255,.06)}
+.grid-line.half{background:rgba(255,255,255,.025)}
+
+/* EVENT CARDS */
+.ev{position:absolute;border-radius:5px;background:rgba(30,26,53,.92);border-left:3px solid #607d8b;padding:4px 6px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,z-index 0s;font-size:.72rem;display:flex;flex-direction:column;gap:1px;backdrop-filter:blur(4px);z-index:1;word-wrap:break-word;min-width:0}
+.ev:hover{box-shadow:0 4px 20px rgba(0,0,0,.6);z-index:50!important}
+.ev-name{font-weight:600;overflow:hidden;line-height:1.2;word-break:break-word;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical}
+.ev-name a{color:var(--text)}
+.ev-name a:hover{text-decoration:underline;color:var(--gold)}
+.ev-time{color:var(--text-dim);font-size:.65rem}
+.ev-price{color:var(--gold);font-size:.65rem;font-weight:500}
+.ev-tags{display:flex;flex-wrap:wrap;gap:2px;margin-top:auto}
+.ev-tag{padding:1px 5px;border-radius:8px;font-size:.55rem;font-weight:500;opacity:.8;white-space:nowrap}
+
+/* STAR BUTTON */
+.ev-star{position:absolute;top:2px;right:4px;font-size:.85rem;cursor:pointer;opacity:.35;transition:all .15s;z-index:2;line-height:1;user-select:none}
+.ev-star:hover{opacity:.8;transform:scale(1.2)}
+.ev-star.starred{opacity:1;color:var(--gold);text-shadow:0 0 6px rgba(255,193,7,.5)}
+.ev.starred-card{box-shadow:0 0 8px rgba(255,193,7,.35);border-left-color:var(--gold)!important}
+
+/* STARRED FILTER */
+.starred-btn{padding:4px 12px;border-radius:12px;font-size:.72rem;font-weight:600;cursor:pointer;border:2px solid var(--gold);color:var(--gold);background:transparent;opacity:.65;transition:all .15s;white-space:nowrap;margin-right:8px}
+.starred-btn:hover{opacity:.9}
+.starred-btn.active{opacity:1;background:rgba(255,193,7,.15);box-shadow:0 0 8px rgba(255,193,7,.25)}
+
+/* COST PANEL */
+.cost-panel{display:none;max-width:900px;margin:20px auto;padding:0 16px}
+.cost-panel.visible{display:block}
+.cost-search{position:relative;margin-bottom:20px}
+.cost-search input{width:100%;padding:10px 14px;font-size:.9rem;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);outline:none;transition:border-color .15s}
+.cost-search input:focus{border-color:var(--gold)}
+.cost-search input::placeholder{color:var(--text-dim)}
+.ac-dropdown{position:absolute;top:100%;left:0;right:0;max-height:260px;overflow-y:auto;background:var(--card);border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;z-index:200;display:none}
+.ac-dropdown.show{display:block}
+.ac-item{padding:8px 14px;cursor:pointer;font-size:.82rem;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid rgba(255,255,255,.04)}
+.ac-item:hover{background:rgba(255,193,7,.08)}
+.ac-item .ac-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ac-item .ac-meta{color:var(--text-dim);font-size:.72rem;white-space:nowrap}
+.ac-item .ac-star{color:var(--gold);font-size:.75rem;margin-left:6px;opacity:.5}
+.ac-item .ac-star.is-starred{opacity:1}
+
+.cost-day-group{margin-bottom:16px}
+.cost-day-title{font-size:.85rem;font-weight:700;color:var(--gold);padding:8px 0;border-bottom:1px solid var(--border);margin-bottom:6px}
+.cost-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:6px;font-size:.82rem;transition:background .1s}
+.cost-row:hover{background:rgba(255,255,255,.03)}
+.cost-row .cr-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cost-row .cr-name a{color:var(--text)}
+.cost-row .cr-name a:hover{color:var(--gold);text-decoration:underline}
+.cost-row .cr-time{color:var(--text-dim);font-size:.72rem;white-space:nowrap;min-width:120px}
+.cost-row .cr-price{color:var(--gold);font-weight:600;min-width:60px;text-align:right}
+.cost-row .cr-remove{cursor:pointer;color:var(--text-dim);font-size:.9rem;padding:2px 6px;border-radius:4px;transition:all .15s}
+.cost-row .cr-remove:hover{color:#f44336;background:rgba(244,67,54,.1)}
+
+.cost-total{display:flex;justify-content:space-between;align-items:center;padding:14px 16px;background:var(--surface);border:2px solid var(--gold);border-radius:8px;margin-top:20px;font-size:1rem}
+.cost-total .ct-label{color:var(--text);font-weight:600}
+.cost-total .ct-amount{color:var(--gold);font-weight:700;font-size:1.3rem}
+.cost-empty{text-align:center;padding:40px 20px;color:var(--text-dim);font-size:.9rem}
+.cost-empty .ce-icon{font-size:2rem;margin-bottom:8px}
+
+/* TOOLTIP */
+.tooltip{display:none;position:fixed;z-index:1000;background:#1e1a35;border:1px solid var(--gold);border-radius:8px;padding:12px;max-width:380px;min-width:260px;box-shadow:0 8px 32px rgba(0,0,0,.7);pointer-events:none}
+.tooltip.show{display:block}
+.tooltip .tt-name{font-weight:700;font-size:.9rem;color:var(--gold);margin-bottom:4px;line-height:1.3}
+.tooltip .tt-time{font-size:.8rem;color:var(--text-dim);margin-bottom:2px}
+.tooltip .tt-price{font-size:.8rem;color:var(--gold);margin-bottom:6px}
+.tooltip .tt-desc{font-size:.75rem;color:var(--text);line-height:1.4;max-height:120px;overflow-y:auto}
+.tooltip .tt-tags{display:flex;flex-wrap:wrap;gap:3px;margin-top:8px}
+.tooltip .tt-tag{padding:2px 7px;border-radius:10px;font-size:.65rem;font-weight:500}
+
+/* FOOTER */
+.footer{text-align:center;padding:20px 16px;font-size:.72rem;color:var(--text-dim);border-top:1px solid var(--border);line-height:1.6}
+.footer a{color:var(--gold)}
+
+@media(max-width:700px){
+  .header h1{font-size:1.2rem}
+  .tab{padding:6px 12px;font-size:.8rem}
+  .filter-bar{padding:8px 10px}
+  .time-axis{width:45px;min-width:45px}
+  .time-label{font-size:.6rem}
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#x2728; MagicCon Amsterdam 2026</h1>
+  <div class="sub">July 17&ndash;19 &bull; RAI Amsterdam</div>
+</div>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-day="2026-07-17">Friday Jul 17</div>
+  <div class="tab" data-day="2026-07-18">Saturday Jul 18</div>
+  <div class="tab" data-day="2026-07-19">Sunday Jul 19</div>
+  <div class="tab" data-day="cost" style="border-color:var(--gold);color:var(--gold)">💰 Cost</div>
+</div>
+
+<div class="filter-bar" id="filterBar">
+  <div class="filter-header">
+    <span>Filter by tag: <span class="count" id="evCount"></span></span>
+    <button class="clear-btn" id="clearBtn">Clear All</button>
+  </div>
+  <div style="display:flex;align-items:center;flex-wrap:wrap;gap:5px">
+    <div class="starred-btn" id="starredFilterBtn" title="Show only starred events">★ Starred <span id="starredCount">(0)</span></div>
+    <div class="tag-filters" id="tagFilters"></div>
+  </div>
+</div>
+
+<div class="cal-wrap">
+  <div class="time-axis" id="timeAxis"></div>
+  <div class="grid-area" id="gridArea">
+    <div class="grid-lines" id="gridLines"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip">
+  <div class="tt-name"></div>
+  <div class="tt-time"></div>
+  <div class="tt-price"></div>
+  <div class="tt-desc"></div>
+  <div class="tt-tags"></div>
+</div>
+
+<div class="cost-panel" id="costPanel">
+  <div class="cost-search">
+    <input type="text" id="costSearch" placeholder="🔍 Search events to add to your list..." autocomplete="off">
+    <div class="ac-dropdown" id="acDropdown"></div>
+  </div>
+  <div id="costList"></div>
+  <div class="cost-total" id="costTotal" style="display:none">
+    <span class="ct-label">Total Cost</span>
+    <span class="ct-amount" id="costAmount">€0</span>
+  </div>
+</div>
+
+<div class="footer">
+  Ticket sales open April 16 at 8 AM PT / 5:00 PM CEST.<br>
+  Data sourced from <a href="https://mcamsterdam.mtgfestivals.com" target="_blank">mcamsterdam.mtgfestivals.com</a>
+</div>
+
+<script>
+const EVENTS = [
+  {id:1,name:'2HG - Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €490',date:'2026-07-17',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€490',tags:['2HG','Collector','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926506&panel-name=2HG-Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC490-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + € 3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. P …'},
+  {id:2,name:'Commander - Precon Battle - Chaos - €95',date:'2026-07-17',time:'11:00 AM -  1:59 PM',sH:11,sM:0,eH:13,eM:59,price:'€95',tags:['Chaos','Commander','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926507&panel-name=Commander-Precon-Battle-Chaos-%E2%82%AC95-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random preconstructed Commander deck to keep and battle it out in this multiplayer event.…'},
+  {id:3,name:'Grand Melee - Deluxe Sealed - Magic: The Gathering  | Marvel Super Heroes with Ify Nwadiwe and Brian David Gilbert - €100',date:'2026-07-17',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€100',tags:['Grand Melee','Hosted','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926508&panel-name=Grand-Melee-Deluxe-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-with-Ify-Nwadiwe-and-Brian-David-Gilbert-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin us for one giant game! Do you have the spells and skills to out last your competitors? Jump in for this fantastic and special format: a Gr …'},
+  {id:4,name:'Commander Sealed Draft with Commander at Home - €150',date:'2026-07-17',time:'11:30 AM -  3:29 PM',sH:11,sM:30,eH:15,eM:29,price:'€150',tags:['Commander','Draft','Hosted','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926511&panel-name=Commander-Sealed-Draft-with-Commander-at-Home-%E2%82%AC150-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCommander at Home wants you to join us for a Commander event you won\'t forget! Don\'t have a deck? No problem! Play with fun variants and celebr …'},
+  {id:5,name:'Unknown with Gavin Verhey - €100',date:'2026-07-17',time:'11:30 AM -  3:29 PM',sH:11,sM:30,eH:15,eM:29,price:'€100',tags:['Hosted','Unknown'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926509&panel-name=Unknown-with-Gavin-Verhey-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin Gavin Verhey and friends as they take you on a journey into the Unknown. This event and the fun within will be at the whim of your host(s) …'},
+  {id:6,name:'Pro Tour Qualifier - Black - Sealed - Magic: The Gathering  | Marvel Super Heroes - €125',date:'2026-07-17',time:'11:30 AM -  7:29 PM',sH:11,sM:30,eH:19,eM:29,price:'€125',tags:['Pro Tour Qualifier','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926510&panel-name=Pro-Tour-Qualifier-Black-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC125-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe most direct way to the Pro Tour! Join this fun, competitive event which can send you straight to the next Pro Tour! Day Two takes place Sat …'},
+  {id:7,name:'Deluxe Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-17',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926514&panel-name=Deluxe-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:8,name:'Last Commander Standing Qualifier - €60',date:'2026-07-17',time:'12:00 PM -  5:59 PM',sH:12,sM:0,eH:17,eM:59,price:'€60',tags:['Commander','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926512&panel-name=Last-Commander-Standing-Qualifier-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your best, bring your baddest and compete in the ultimate multiplayer battle. Can you face down all your competitors and be the Last Comm …'},
+  {id:9,name:'Team Trios - Sealed - Magic: The Gathering® | Marvel Super Heroes - €135',date:'2026-07-17',time:'12:00 PM -  4:59 PM',sH:12,sM:0,eH:16,eM:59,price:'€135',tags:['Constructed','Legacy','Modern','Team','Trios','Vintage'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926513&panel-name=Team-Trios-Sealed-Magic-The-Gathering%C2%AE-Marvel-Super-Heroes-%E2%82%AC135-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:10,name:'Pauper Cup - MagicCon: Amsterdam - €60',date:'2026-07-17',time:'12:30 PM -  7:29 PM',sH:12,sM:30,eH:19,eM:29,price:'€60',tags:['Constructed','Cup','Pauper'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926515&panel-name=Pauper-Cup-MagicCon-Amsterdam-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeePauper players join for fun, prizes, bragging rights, and a trophy. Pauper Cup Top 8 takes place after the conclusion of Swiss rounds …'},
+  {id:11,name:'2HG - Marvel Sealed - Magic: The Gathering | Marvel Super Heroes and Marvel\'s Spider-Man - €80',date:'2026-07-17',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€80',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926517&panel-name=2HG-Marvel-Sealed-Magic-The-Gathering-Marvel-Super-Heroes-and-Marvels-Spider-Man-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:12,name:'Magic: The Gauntlet - Sealed, Draft, Merge - Magic: The Gathering  | Marvel Super Heroes - €70',date:'2026-07-17',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€70',tags:['Draft','Gauntlet','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926516&panel-name=Magic-The-Gauntlet-Sealed-Draft-Merge-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeEnter the gauntlet! A round of Magic: The Gathering® | Marvel Super Heroes Sealed followed by a Magic: The Gathering® | Marvel Super Heroes dra …'},
+  {id:13,name:'Standard Cup - MagicCon: Amsterdam - €60',date:'2026-07-17',time:'1:30 PM -  9:29 PM',sH:13,sM:30,eH:21,eM:29,price:'€60',tags:['Constructed','Cup','Standard'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926519&panel-name=Standard-Cup-MagicCon-Amsterdam-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeStandard players join for fun, prizes, bragging rights, and a trophy. Standard Cup Top 8 takes place Saturday, July 18th, at 1pm.IMPO …'},
+  {id:14,name:'Mega-Draft - Lorwyn Eclipsed - €35',date:'2026-07-17',time:'2:00 PM -  5:59 PM',sH:14,sM:0,eH:17,eM:59,price:'€35',tags:['Mega-Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926520&panel-name=Mega-Draft-Lorwyn-Eclipsed-%E2%82%AC35-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIt\'s a Lorwyn Eclipsed draft, with twice the packs! Can you draft up a strategy that will help you beat the competition?IMPORTANT REG …'},
+  {id:15,name:'Team Trios - Sealed - Magic: The Gathering  | Marvel Super Heroes - €135',date:'2026-07-17',time:'2:00 PM -  5:59 PM',sH:14,sM:0,eH:17,eM:59,price:'€135',tags:['Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926521&panel-name=Team-Trios-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC135-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:16,name:'Battlebox - Sneaky Snacker Qualifier - €50',date:'2026-07-17',time:'2:30 PM -  5:29 PM',sH:14,sM:30,eH:17,eM:29,price:'€50',tags:['Battlebox'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926522&panel-name=Battlebox-Sneaky-Snacker-Qualifier-%E2%82%AC50-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCome prove your mettle and show how sneaky you can be in this Battlebox qualifier. The top 4 players qualify for Battlebox Finals on Sunday, 12 …'},
+  {id:17,name:'2HG - Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-17',time:'3:00 PM -  6:59 PM',sH:15,sM:0,eH:18,eM:59,price:'€210',tags:['2HG','Full Box Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926523&panel-name=2HG-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:18,name:'Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €250',date:'2026-07-17',time:'3:00 PM -  6:59 PM',sH:15,sM:0,eH:18,eM:59,price:'€250',tags:['Collector','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926525&panel-name=Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC250-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOpen the coolest cards with six Collector Boosters full of rare cards, shiny foil cards, and special alt-art, alt-frame cards. Can you make the …'},
+  {id:19,name:'Commander Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-17',time:'3:00 PM -  5:59 PM',sH:15,sM:0,eH:17,eM:59,price:'€210',tags:['Commander','Full Box Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926524&panel-name=Commander-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThere\'s a Commander deck waiting for you inside a box. Can you find it among all your options? Once your and your deck are ready battle it out  …'},
+  {id:20,name:'All Play - Sealed - Mystery Booster 2 - €70',date:'2026-07-17',time:'3:30 PM -  7:29 PM',sH:15,sM:30,eH:19,eM:29,price:'€70',tags:['All Play','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926526&panel-name=All-Play-Sealed-Mystery-Booster-2-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeHold Nothing Back - As no deck building needed. Unveil the mystery as you crack your packs, shuffle up all the cards, use basic lands from outs …'},
+  {id:21,name:'Team Trios - Full-Box Sealed - Mystery Booster 2 - €285',date:'2026-07-17',time:'4:00 PM -  7:59 PM',sH:16,sM:0,eH:19,eM:59,price:'€285',tags:['Full Box Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926529&panel-name=Team-Trios-Full-Box-Sealed-Mystery-Booster-2-%E2%82%AC285-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:22,name:'Competitive Draft - Magic: The Gathering  | Marvel Super Heroes - €100',date:'2026-07-17',time:'4:00 PM -  7:59 PM',sH:16,sM:0,eH:19,eM:59,price:'€100',tags:['Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926528&panel-name=Competitive-Draft-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your competitive spirit to this draft prepare to face their strong and the mighty.IMPORTANT REGISTRATION DETAILS< …'},
+  {id:23,name:'Chaos Sealed with CardMarketLive - €55',date:'2026-07-17',time:'4:00 PM -  7:59 PM',sH:16,sM:0,eH:19,eM:59,price:'€55',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926527&panel-name=Chaos-Sealed-with-CardMarketLive-%E2%82%AC55-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin CardMarketLive for this wild and wacky sealed event that certainly will put the Chaos into you card pool, your build plans and your game p …'},
+  {id:24,name:'Unknown Flashback - Full-Box Sealed - Grand Melee - Mystery Booster 2 - with Matt Tabak - €300',date:'2026-07-17',time:'4:30 PM -  9:30 PM',sH:16,sM:30,eH:21,eM:30,price:'€300',tags:['Full Box Sealed','Grand Melee','Hosted','Unknown'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926530&panel-name=Unknown-Flashback-Full-Box-Sealed-Grand-Melee-Mystery-Booster-2-with-Matt-Tabak-%E2%82%AC300-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin Matt Tabak with this Un-believable chance to take a step back to the Unknown, in the grandest format of them all ... Grand Melee!…'},
+  {id:25,name:'Chaos Chaos Chaos with LoadingReadyRun! - €120',date:'2026-07-17',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€120',tags:['Chaos','Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926534&panel-name=Chaos-Chaos-Chaos-with-LoadingReadyRun-%E2%82%AC120-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBoosters? Yes! Mystery? Yes! Chaos? Yes! LoadingReadyRun? Yes! Join a Draft Your Draft where you Rochester draft a chaos collection of boosters …'},
+  {id:26,name:'Chase the Planes - Sealed - Secrets of Strixhaven - €35',date:'2026-07-17',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€35',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926531&panel-name=Chase-the-Planes-Sealed-Secrets-of-Strixhaven-%E2%82%AC35-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service Fee Starting at the University of Strixhaven, be the best mage you can be in this exciting Sealed event.  Build your best deck and battle it out w …'},
+  {id:27,name:'Deluxe Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-17',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926533&panel-name=Deluxe-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:28,name:'Team Trios - Modern, Legacy, Vintage Win an Oversized Card - €75',date:'2026-07-17',time:'5:00 PM -  9:59 PM',sH:17,sM:0,eH:21,eM:59,price:'€75',tags:['Legacy','Modern','Team','Trios','Vintage'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926532&panel-name=Team-Trios-Modern-Legacy-Vintage-Win-an-Oversized-Card-%E2%82%AC75-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:29,name:'Strixhaven Study Hall Mini-game Sealed with Brian David-Marshall - €100',date:'2026-07-17',time:'5:30 PM -  8:29 PM',sH:17,sM:30,eH:20,eM:29,price:'€100',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926535&panel-name=Strixhaven-Study-Hall-Mini-game-Sealed-with-Brian-David-Marshall-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin our Study Hall Proctor Brian David-Marshall as he oversees the class. Build the best two decks you can to learn your lessons, and  perhaps …'},
+  {id:30,name:'Friday Night Magic - 2HG - Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-17',time:'6:00 PM -  9:59 PM',sH:18,sM:0,eH:21,eM:59,price:'€90',tags:['2HG','FNM','Friday Night Magic','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926537&panel-name=Friday-Night-Magic-2HG-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:31,name:'Friday Night Magic - Constructed - Commander Party - Magic: The Gathering  | Marvel Super Heroes - €25',date:'2026-07-17',time:'6:00 PM -  8:59 PM',sH:18,sM:0,eH:20,eM:59,price:'€25',tags:['Commander','Constructed','FNM','Friday Night Magic'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926536&panel-name=Friday-Night-Magic-Constructed-Commander-Party-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC25-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeNothing makes Friday Night more magical than a Commander Party! This one with a Strixhaven twist! Bring your favorite commander decks and come  …'},
+  {id:32,name:'Friday Night Magic - Standard - Win a Box - €30',date:'2026-07-17',time:'6:00 PM -  8:59 PM',sH:18,sM:0,eH:20,eM:59,price:'€30',tags:['Constructed','FNM','Friday Night Magic','Standard'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926538&panel-name=Friday-Night-Magic-Standard-Win-a-Box-%E2%82%AC30-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeFriday Night Magic! Nothing screams Magic more than FNM, and this tournament celebrates that history with a great Standard event!IMPO …'},
+  {id:33,name:'Friday Night Magic - Collector Commander Precon Battle - Magic: The Gathering  | Marvel Super Heroes - €175',date:'2026-07-17',time:'7:00 PM -  9:59 PM',sH:19,sM:0,eH:21,eM:59,price:'€175',tags:['Chaos','Commander','FNM','Friday Night Magic','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926540&panel-name=Friday-Night-Magic-Collector-Commander-Precon-Battle-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC175-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeWant to play Commander at Friday Night Magic but don\'t have a deck, or wish you had a new deck? We\'ve got you covered! Receive a random precons …'},
+  {id:34,name:'Friday Night Magic - Mega-Draft - Magic: The Gathering  | Marvel Super Heroes - €45',date:'2026-07-17',time:'7:00 PM -  10:59 PM',sH:19,sM:0,eH:22,eM:59,price:'€45',tags:['Draft','FNM','Friday Night Magic'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926541&panel-name=Friday-Night-Magic-Mega-Draft-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC45-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeFriday Night Magic! Nothing screams Magic more than FNM so come Draft with us. Mega means twice the packs!IMPORTANT REGISTRATION DETA …'},
+  {id:35,name:'Friday Night Magic - Sealed - Magic: The Gathering  | Marvel Super Heroes - €45',date:'2026-07-17',time:'7:00 PM -  10:59 PM',sH:19,sM:0,eH:22,eM:59,price:'€45',tags:['FNM','Friday Night Magic','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926539&panel-name=Friday-Night-Magic-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC45-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeFriday Night Magic! Nothing screams Magic more than FNM, and this tournament celebrates that history with a great Sealed event!IMPORT …'},
+  {id:36,name:'Team Trios - Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €735',date:'2026-07-17',time:'7:00 PM -  10:59 PM',sH:19,sM:0,eH:22,eM:59,price:'€735',tags:['Collector','Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926542&panel-name=Team-Trios-Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC735-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:37,name:'Mini-Masters Extravaganza - €20',date:'2026-07-17',time:'7:30 PM -  10:29 PM',sH:19,sM:30,eH:22,eM:29,price:'€20',tags:['Mini-masters','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926543&panel-name=Mini-Masters-Extravaganza-%E2%82%AC20-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIt\'s a Mini-Masters Extravaganza! Join us for this fun and fast format. Receive a booster pack and 15 lands to join together and play out your  …'},
+  {id:38,name:'Friday Night Magic - Modern - Win a Box - €30',date:'2026-07-17',time:'8:00 PM -  10:59 PM',sH:20,sM:0,eH:22,eM:59,price:'€30',tags:['Constructed','FNM','Friday Night Magic','Modern'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926545&panel-name=Friday-Night-Magic-Modern-Win-a-Box-%E2%82%AC30-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeFriday Night Magic! Nothing screams Magic more than FNM, and this tournament celebrates that history with a great Modern event.IMPORT …'},
+  {id:39,name:'Friday Night Magic - Pauper - Win a Box - €30',date:'2026-07-17',time:'8:00 PM -  10:59 PM',sH:20,sM:0,eH:22,eM:59,price:'€30',tags:['Constructed','FNM','Friday Night Magic','Pauper'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926544&panel-name=Friday-Night-Magic-Pauper-Win-a-Box-%E2%82%AC30-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeFriday Night Magic! Nothing screams Magic more than FNM, and this tournament celebrates that history with a great Pauper event!IMPORT …'},
+  {id:40,name:'Lightning Round - Commander - €15',date:'2026-07-17',time:'8:30 PM -  10:29 PM',sH:20,sM:30,eH:22,eM:29,price:'€15',tags:['Commander','Constructed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926546&panel-name=Lightning-Round-Commander-%E2%82%AC15-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeePlay a lightning-quick round of Commander with this fast and broken Commander format!IMPORTANT REGISTRATION DETAILSE …'},
+  {id:41,name:'Turbo - 2HG - Four-Pack Sealed - Mystery Booster 2 - €100',date:'2026-07-17',time:'8:30 PM -  10:29 PM',sH:20,sM:30,eH:22,eM:29,price:'€100',tags:['2HG','Sealed','Team','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926548&panel-name=Turbo-2HG-Four-Pack-Sealed-Mystery-Booster-2-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:42,name:'Turbo - Four-Pack Sealed - Mystery Booster 2 - €50',date:'2026-07-17',time:'8:30 PM -  10:29 PM',sH:20,sM:30,eH:22,eM:29,price:'€50',tags:['Sealed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926547&panel-name=Turbo-Four-Pack-Sealed-Mystery-Booster-2-%E2%82%AC50-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin us for one last sealed event with this four-pack Mystery Booster event!IMPORTANT REGISTRATION DETAILSEntry fees …'},
+  {id:43,name:'Grand Melee - Mega-Draft - Mystery Booster 2 with CardMarketLive - €70',date:'2026-07-18',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€70',tags:['Commander','Full Box Sealed','Grand Melee'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926553&panel-name=Grand-Melee-Mega-Draft-Mystery-Booster-2-with-CardMarketLive-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCardMarketLive wants you to participate in the largest Grand Melee! It  will be chaotic but it will be the most fun with your attendance. RSVP  …'},
+  {id:44,name:'2HG - Draft your Draft - Chaos - €80',date:'2026-07-18',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€80',tags:['2HG','Chaos','Draft','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926549&panel-name=2HG-Draft-your-Draft-Chaos-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:45,name:'Commander - Precon Battle - Magic: The Gathering  | Marvel Super Heroes - €80',date:'2026-07-18',time:'11:00 AM -  1:59 PM',sH:11,sM:0,eH:13,eM:59,price:'€80',tags:['Commander','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926551&panel-name=Commander-Precon-Battle-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random Magic: The Gathering® | Marvel Super Heroes preconstructed Commander deck to keep and …'},
+  {id:46,name:'Last Commander Standing Qualifier - €60',date:'2026-07-18',time:'11:00 AM -  4:59 PM',sH:11,sM:0,eH:16,eM:59,price:'€60',tags:['Commander','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926552&panel-name=Last-Commander-Standing-Qualifier-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your best, bring your baddest and compete in the ultimate multiplayer battle. Can you face down all your competitors and be the Last Comm …'},
+  {id:47,name:'Magic: The Gauntlet - Sealed, Draft, Merge - Magic: The Gathering  | Marvel Super Heroes - €70',date:'2026-07-18',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€70',tags:['Draft','Gauntlet','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926550&panel-name=Magic-The-Gauntlet-Sealed-Draft-Merge-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeEnter the gauntlet! A round of Magic: The Gathering® | Marvel Super Heroes Sealed followed by a Magic: The Gathering® | Marvel Super Heroes dra …'},
+  {id:48,name:'Constructed - Pauper - Win an Invite to Paupergeddon - €60',date:'2026-07-18',time:'11:30 AM -  6:29 PM',sH:11,sM:30,eH:18,eM:29,price:'€60',tags:['Constructed','Pauper'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926555&panel-name=Constructed-Pauper-Win-an-Invite-to-Paupergeddon-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCome and compete with your best Pauper deck and pave your way to Paupergeddon.IMPORTANT REGISTRATION DETAILSEntry fe …'},
+  {id:49,name:'Limited Championship Qualifier - Black - €125',date:'2026-07-18',time:'11:30 AM -  6:29 PM',sH:11,sM:30,eH:18,eM:29,price:'€125',tags:['Limited Championship Qualifier','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926554&panel-name=Limited-Championship-Qualifier-Black-%E2%82%AC125-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin the competition. There’s a qualification waiting for you—if you can build the sealed deck to grasp it.IMPORTANT REGISTRATION DET …'},
+  {id:50,name:'Untold Stories: Elspeth – Theros: Beyond Death Progressive Sealed with The Magic Story Podcast - €95',date:'2026-07-18',time:'11:30 AM -  3:29 PM',sH:11,sM:30,eH:15,eM:29,price:'€95',tags:['Hosted','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926556&panel-name=Untold-Stories-Elspeth-%E2%80%93-Theros-Beyond-Death-Progressive-Sealed-with-The-Magic-Story-Podcast-%E2%82%AC95-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin The Magic Story Podcast for a History lesson on Theros. Learn all about the history and lore while you build your own decks and sling some …'},
+  {id:51,name:'All Play - Sealed - Mystery Booster 2 - €70',date:'2026-07-18',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€70',tags:['All Play','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926560&panel-name=All-Play-Sealed-Mystery-Booster-2-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeHold Nothing Back - As no deck building needed. Unveil the mystery as you crack your packs, shuffle up all the cards, use basic lands from outs …'},
+  {id:52,name:'Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €250',date:'2026-07-18',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€250',tags:['Collector','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926557&panel-name=Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC250-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOpen the coolest cards with six Collector Boosters full of rare cards, shiny foil cards, and special alt-art, alt-frame cards. Can you make the …'},
+  {id:53,name:'Pro Tour Qualifier - Black - Top 32',date:'2026-07-18',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'Free',tags:['Draft','Pro Tour Qualifier'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926559&panel-name=Pro-Tour-Qualifier-Black-Top-32-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe most direct way to the Pro Tour! Join this fun, competitive event which can send you straight to the next Pro Tour!REGISTRATION D …'},
+  {id:54,name:'Team Trios - Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €735',date:'2026-07-18',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€735',tags:['Collector','Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926558&panel-name=Team-Trios-Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC735-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:55,name:'Witherbloom - Mage Tower Showdown League - €80',date:'2026-07-18',time:'12:30 PM -  1:30 PM',sH:12,sM:30,eH:13,eM:30,price:'€80',tags:['League','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926565&panel-name=Witherbloom-Mage-Tower-Showdown-League-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIf an aspect of nature is calling then Witherbloom wants you. Maybe you\'re taking your hand at learning the land and encouraging life to grow,  …'},
+  {id:56,name:'Lorehold - Mage Tower Showdown League - €80',date:'2026-07-18',time:'12:30 PM -  1:29 PM',sH:12,sM:30,eH:13,eM:29,price:'€80',tags:['League','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926561&panel-name=Lorehold-Mage-Tower-Showdown-League-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCalling the most diligent researchers and daring adventures to Lorehold campus. Gather in Kollema Hall as we regale you with tales of prominent …'},
+  {id:57,name:'Prismari - Mage Tower Showdown League - €80',date:'2026-07-18',time:'12:30 PM -  1:29 PM',sH:12,sM:30,eH:13,eM:29,price:'€80',tags:['League','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926562&panel-name=Prismari-Mage-Tower-Showdown-League-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCalling the artists, musicians and most expressive mages. The metaphsyical beckons you to the Prismari Campus. The world is a stage and your we …'},
+  {id:58,name:'Silverquill - Mage Tower Showdown League - €80',date:'2026-07-18',time:'12:30 PM -  1:29 PM',sH:12,sM:30,eH:13,eM:29,price:'€80',tags:['League','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926564&panel-name=Silverquill-Mage-Tower-Showdown-League-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIf you believe that Math is Magic then the Quandrix campus calls. Your sharp mind for the power of patterns and fractals and eye for dismantlin …'},
+  {id:59,name:'Quandrix - Mage Tower Showdown League - €80',date:'2026-07-18',time:'12:30 PM -  1:29 PM',sH:12,sM:30,eH:13,eM:29,price:'€80',tags:['League','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926563&panel-name=Quandrix-Mage-Tower-Showdown-League-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe pen is mightier than the sword and if you choose to wield the magic of words then your razor wit and sharp talent are needed on the Silverq …'},
+  {id:60,name:'2HG - Collector Booster Sealed - Magic: The Gathering | Marvel Super Heroes - €490',date:'2026-07-18',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€490',tags:['2HG','Collector','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926566&panel-name=2HG-Collector-Booster-Sealed-Magic-The-Gathering-Marvel-Super-Heroes-%E2%82%AC490-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:61,name:'Deluxe Sealed - Lorwyn Eclipsed - €80',date:'2026-07-18',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€80',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926567&panel-name=Deluxe-Sealed-Lorwyn-Eclipsed-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeReturn with us to Lorwyn and build the best 40-card deck you can to battle it out for three rounds.IMPORTANT REGISTRATION DETAILS …'},
+  {id:62,name:'Deluxe Sealed - Magic: The Gathering | Marvel Super Heroes - €90',date:'2026-07-18',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926568&panel-name=Deluxe-Sealed-Magic-The-Gathering-Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:63,name:'Standard Cup - MagicCon: Amsterdam - Top 8',date:'2026-07-18',time:'1:00 PM -  3:59 PM',sH:13,sM:0,eH:15,eM:59,price:'Free',tags:['Constructed','Cup','Standard','Top 8'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926569&panel-name=Standard-Cup-MagicCon-Amsterdam-Top-8-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe top Standard players battle it out bragging rights, and a trophy.IMPORTANT REGISTRATION DETAILSEntry fees are in …'},
+  {id:64,name:'Pro Tour Qualifier - Gold - Constructed - Modern - €100',date:'2026-07-18',time:'1:30 PM -  9:29 PM',sH:13,sM:30,eH:21,eM:29,price:'€100',tags:['Constructed','Modern','Pro Tour Qualifier'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926570&panel-name=Pro-Tour-Qualifier-Gold-Constructed-Modern-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe most direct way to the Pro Tour! Join this fun, competitive event which can send you straight to the next Pro Tour! Day Two takes place Sun …'},
+  {id:65,name:'Marvel Sealed - Magic: The Gathering | Marvel Super Heroes and Marvel\'s Spider-Man - €40',date:'2026-07-18',time:'2:00 PM -  5:59 PM',sH:14,sM:0,eH:17,eM:59,price:'€40',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926573&panel-name=Marvel-Sealed-Magic-The-Gathering-Marvel-Super-Heroes-and-Marvels-Spider-Man-%E2%82%AC40-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDoes your team have what it takes to conquer this sealed challenge? Build your best deck you can  and battle it out over three rounds.…'},
+  {id:66,name:'Team Trios - Mixed Format - Standard, Modern, Limited - Win Oversized Cards - €75',date:'2026-07-18',time:'2:00 PM -  6:59 PM',sH:14,sM:0,eH:18,eM:59,price:'€75',tags:['Mixed Format','Modern','Sealed','Standard','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926572&panel-name=Team-Trios-Mixed-Format-Standard-Modern-Limited-Win-Oversized-Cards-%E2%82%AC75-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:67,name:'Unknown for Charity with Gavin Verhey - €100',date:'2026-07-18',time:'2:00 PM -  5:59 PM',sH:14,sM:0,eH:17,eM:59,price:'€100',tags:['Hosted','Unknown'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926574&panel-name=Unknown-for-Charity-with-Gavin-Verhey-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin Gavin Verhey and friends as they take you on a journey into the Unknown. This event and the fun within will be at the whim of your host(s) …'},
+  {id:68,name:'Duel Commander Cup - MagicCon: Amsterdam - €60',date:'2026-07-18',time:'2:00 PM -  9:59 PM',sH:14,sM:0,eH:21,eM:59,price:'€60',tags:['Commander','Constructed','Cup'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926575&panel-name=Duel-Commander-Cup-MagicCon-Amsterdam-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDuel Commander players join for fun, prizes, bragging rights and a trophy! Top 8 to take place Sunday, July 19th, at 11:30 am.IMPORTA …'},
+  {id:69,name:'Legacy Cup - MagicCon: Amsterdam - €60',date:'2026-07-18',time:'2:30 PM -  10:29 PM',sH:14,sM:30,eH:22,eM:29,price:'€60',tags:['Constructed','Cup','Legacy'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926576&panel-name=Legacy-Cup-MagicCon-Amsterdam-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeLegacy players join together for fun, prizes, bragging rights, and a trophy. Legacy Cup Top 8 takes place Sunday, July 19th at 11:00 AM< …'},
+  {id:70,name:'2HG - Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-18',time:'3:00 PM -  6:59 PM',sH:15,sM:0,eH:18,eM:59,price:'€210',tags:['2HG','Full Box Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926577&panel-name=2HG-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:71,name:'Commander - Precon Party - Magic: The Gathering | Marvel Super Heroes - €80',date:'2026-07-18',time:'3:00 PM -  5:59 PM',sH:15,sM:0,eH:17,eM:59,price:'€80',tags:['Commander','Commander Party','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926579&panel-name=Commander-Precon-Party-Magic-The-Gathering-Marvel-Super-Heroes-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random Magic: The Gathering® | Marvel Super Heroes preconstructed Commander deck to keep and …'},
+  {id:72,name:'Constructed - Commander Deck Challenge: Black - €25',date:'2026-07-18',time:'3:00 PM -  5:59 PM',sH:15,sM:0,eH:17,eM:59,price:'€25',tags:['Commander','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926578&panel-name=Constructed-Commander-Deck-Challenge-Black-%E2%82%AC25-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBlack decks to dominate them all! Zombies, Vampires, Life Loss, and a complex wetland of swamps. Build your best Mono-Black deck and bring it t …'},
+  {id:73,name:'Modern Cup - MagicCon: Amsterdam - €60',date:'2026-07-18',time:'3:30 PM -  11:29 PM',sH:15,sM:30,eH:23,eM:29,price:'€60',tags:['Constructed','Cup','Modern'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926580&panel-name=Modern-Cup-MagicCon-Amsterdam-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeModern players join for fun, prizes, bragging rights, and a trophy. Modern Cup Top 8 takes place on Sunday, July 19th, at 1pm.IMPORTA …'},
+  {id:74,name:'Battlebox - Sneaky Snacker Qualifier - €50',date:'2026-07-18',time:'4:00 PM -  6:59 PM',sH:16,sM:0,eH:18,eM:59,price:'€50',tags:['Battlebox'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926581&panel-name=Battlebox-Sneaky-Snacker-Qualifier-%E2%82%AC50-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCome prove your mettle and show how sneaky you can be in this Battlebox qualifier. The top 4 players qualify for Battlebox Finals on Sunday, 12 …'},
+  {id:75,name:'Competitive Draft - Magic: The Gathering | Marvel Super Heroes - €100',date:'2026-07-18',time:'4:30 PM -  8:29 PM',sH:16,sM:30,eH:20,eM:29,price:'€100',tags:['Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926582&panel-name=Competitive-Draft-Magic-The-Gathering-Marvel-Super-Heroes-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your competitive spirit to this draft prepare to face their strong and the mighty.IMPORTANT REGISTRATION DETAILS< …'},
+  {id:76,name:'Team Trios - Grand Melee - Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-18',time:'4:30 PM -  8:29 PM',sH:16,sM:30,eH:20,eM:29,price:'€210',tags:['Grand Melee','Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926583&panel-name=Team-Trios-Grand-Melee-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:77,name:'2HG - Deluxe Sealed - Unfinity - €120',date:'2026-07-18',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€120',tags:['2HG','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926584&panel-name=2HG-Deluxe-Sealed-Unfinity-%E2%82%AC120-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:78,name:'All Play - Sealed - Mystery Booster 2 - €70',date:'2026-07-18',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€70',tags:['All Play','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926587&panel-name=All-Play-Sealed-Mystery-Booster-2-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeHold Nothing Back - As no deck building needed. Unveil the mystery as you crack your packs, shuffle up all the cards, use basic lands from outs …'},
+  {id:79,name:'Chaos Chaos Chaos with LoadingReadyRun! - €120',date:'2026-07-18',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€120',tags:['Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926588&panel-name=Chaos-Chaos-Chaos-with-LoadingReadyRun-%E2%82%AC120-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBoosters? Yes! Mystery? Yes! Chaos? Yes! LoadingReadyRun? Yes! Join a Draft Your Draft where you Rochester draft a chaos collection of boosters …'},
+  {id:80,name:'Deluxe Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-18',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926586&panel-name=Deluxe-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:81,name:'Mega-Draft - Chase the Planes - Mystery Booster 2 - €70',date:'2026-07-18',time:'5:00 PM -  8:59 PM',sH:17,sM:0,eH:20,eM:59,price:'€70',tags:['Mega-Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926585&panel-name=Mega-Draft-Chase-the-Planes-Mystery-Booster-2-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIt\'s a Mystery Booster 2 draft, with twice the packs! Can you draft up a strategy that will help you unveil the mystery while you traipse acros …'},
+  {id:82,name:'Chaos Sealed - €65',date:'2026-07-18',time:'6:00 PM -  9:59 PM',sH:18,sM:0,eH:21,eM:59,price:'€65',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926589&panel-name=Chaos-Sealed-%E2%82%AC65-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best 40 card sealed pool out of a chaotic sealed pool, then battle it out for three roundsIMPORTANT REGISTRATION DETAILS…'},
+  {id:83,name:'Commander Party - Constructed - Magic: The Gathering  | Marvel Super Heroes - €25',date:'2026-07-18',time:'6:00 PM -  8:59 PM',sH:18,sM:0,eH:20,eM:59,price:'€25',tags:['Commander','Commander Party','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926591&panel-name=Commander-Party-Constructed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC25-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your best and baddest Commander deck and join us for the Magic: The Gathering® | Marvel Super Heroes Commander Party!  What is a Commande …'},
+  {id:84,name:'Deluxe Sealed - Secrets of Strixhaven - €80',date:'2026-07-18',time:'6:00 PM -  9:59 PM',sH:18,sM:0,eH:21,eM:59,price:'€80',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926592&panel-name=Deluxe-Sealed-Secrets-of-Strixhaven-%E2%82%AC80-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeExplore Strixhaven and build the best 40-card deck you can to battle it out for three rounds.IMPORTANT REGISTRATION DETAILS …'},
+  {id:85,name:'Team Trios - Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-18',time:'6:00 PM -  9:59 PM',sH:18,sM:0,eH:21,eM:59,price:'€210',tags:['Full Box Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926590&panel-name=Team-Trios-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:86,name:'2HG - Full-Box Sealed - Mystery Booster 2 - €285',date:'2026-07-18',time:'7:00 PM -  10:59 PM',sH:19,sM:0,eH:22,eM:59,price:'€285',tags:['2HG','Full Box Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926593&panel-name=2HG-Full-Box-Sealed-Mystery-Booster-2-%E2%82%AC285-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:87,name:'Commander - Precon Battle - Chaos - €95',date:'2026-07-18',time:'7:00 PM -  9:59 PM',sH:19,sM:0,eH:21,eM:59,price:'€95',tags:['Chaos','Commander','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926594&panel-name=Commander-Precon-Battle-Chaos-%E2%82%AC95-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random preconstructed Commander deck to keep and battle it out in this multiplayer event.…'},
+  {id:88,name:'Commander and Cocktails with Brian David-Marshall - €200',date:'2026-07-18',time:'7:00 PM -  7:59 PM',sH:19,sM:0,eH:19,eM:59,price:'€200',tags:['Commander','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926595&panel-name=Commander-and-Cocktails-with-Brian-David-Marshall-%E2%82%AC200-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin Brian David-Marshall as he discusses brewing commander decks while you brew a new Commander deck for the weekend’s sealed Commander and Co …'},
+  {id:89,name:'Mini-Masters Extravaganza - €20',date:'2026-07-18',time:'7:30 PM -  10:29 PM',sH:19,sM:30,eH:22,eM:29,price:'€20',tags:['Mini-masters','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926596&panel-name=Mini-Masters-Extravaganza-%E2%82%AC20-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIt\'s a Mini-Masters Extravaganza! Join us for this fun and fast format. Receive a booster pack and 15 lands to join together and play out your  …'},
+  {id:90,name:'Lightning Round - Commander - €15',date:'2026-07-18',time:'8:00 PM -  9:59 PM',sH:20,sM:0,eH:21,eM:59,price:'€15',tags:['Commander','Constructed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926597&panel-name=Lightning-Round-Commander-%E2%82%AC15-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeePlay a lightning-quick round of Commander with this fast and broken Commander format!IMPORTANT REGISTRATION DETAILSE …'},
+  {id:91,name:'Turbo - 2HG - Sealed - Magic: The Gathering  | Marvel Super Heroes - €75',date:'2026-07-18',time:'8:30 PM -  10:29 PM',sH:20,sM:30,eH:22,eM:29,price:'€75',tags:['2HG','Sealed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926599&panel-name=Turbo-2HG-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC75-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:92,name:'Turbo - Four-Pack Sealed - Mystery Booster 2 - €50',date:'2026-07-18',time:'8:30 PM -  10:29 PM',sH:20,sM:30,eH:22,eM:29,price:'€50',tags:['Sealed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926598&panel-name=Turbo-Four-Pack-Sealed-Mystery-Booster-2-%E2%82%AC50-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin us for one last sealed event with this four-pack Mystery Booster event!IMPORTANT REGISTRATION DETAILSEntry fees …'},
+  {id:93,name:'Second-Chance Pro Tour Qualifier',date:'2026-07-19',time:'9:00 AM -  2:59 PM',sH:9,sM:0,eH:14,eM:59,price:'Free',tags:['Pro Tour Qualifier'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926600&panel-name=Second-Chance-Pro-Tour-Qualifier-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThis event is invite only for competitors in the first Pro Tour of 2026.IMPORTANT REGISTRATION DETAILSEntry fees are …'},
+  {id:94,name:'Sunday Sealed and Stacked - €125',date:'2026-07-19',time:'10:30 AM -  4:29 PM',sH:10,sM:30,eH:16,eM:29,price:'€125',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926601&panel-name=Sunday-Sealed-and-Stacked-%E2%82%AC125-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeWe hope you didn\'t think this was going to be a lazy Sunday! We\'ve got a pile of boosters, and we hope you\'re ready to bring your best Sealed s …'},
+  {id:95,name:'2HG - Grand Melee - Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-19',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€90',tags:['2HG','Grand Melee','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926607&panel-name=2HG-Grand-Melee-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:96,name:'Collector Commander - Precon Party - Magic: The Gathering  | Marvel Super Heroes - €175',date:'2026-07-19',time:'11:00 AM -  1:59 PM',sH:11,sM:0,eH:13,eM:59,price:'€175',tags:['Commander','Commander Party','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926606&panel-name=Collector-Commander-Precon-Party-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC175-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random preconstructed Collector Commander deck to keep and battle it out in this multiplayer …'},
+  {id:97,name:'Constructed - Commander Deck Challenge: Gold - €25',date:'2026-07-19',time:'11:00 AM -  1:59 PM',sH:11,sM:0,eH:13,eM:59,price:'€25',tags:['Commander','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926608&panel-name=Constructed-Commander-Deck-Challenge-Gold-%E2%82%AC25-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeEvery color shines together. Bring your best Gold Commander deck! Any color combination, any strategy!  Let your chromatic creativity shine abo …'},
+  {id:98,name:'Deluxe Sealed - Magic: The Gathering  | Marvel Super Heroes - €90',date:'2026-07-19',time:'11:00 AM -  2:59 PM',sH:11,sM:0,eH:14,eM:59,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926605&panel-name=Deluxe-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:99,name:'Last Commander Standing - Top 16 -  -',date:'2026-07-19',time:'11:00 AM -  12:59 PM',sH:11,sM:0,eH:12,eM:59,price:'Free',tags:['Commander','Constructed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926603&panel-name=Last-Commander-Standing-Top-16-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe sixteen baddest standouts are here for a showdown. Who will be the Last Commander StandingIMPORTANT REGISTRATION DETAILS…'},
+  {id:100,name:'Team Trios - Constructed - Modern, Legacy, Vintage Win an Oversized Card - €75',date:'2026-07-19',time:'11:00 AM -  3:59 PM',sH:11,sM:0,eH:15,eM:59,price:'€75',tags:['Legacy','Modern','Team','Trios','Vintage'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926602&panel-name=Team-Trios-Constructed-Modern-Legacy-Vintage-Win-an-Oversized-Card-%E2%82%AC75-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:101,name:'Constructed - Pauper - Win a Sheet - €40',date:'2026-07-19',time:'11:30 AM -  4:29 PM',sH:11,sM:30,eH:16,eM:29,price:'€40',tags:['Constructed','Pauper'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926612&panel-name=Constructed-Pauper-Win-a-Sheet-%E2%82%AC40-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeHave you got the Pauper deck that could win it all? Bring your best strategy to bear to win prizes in this five-round tournament!IMPO …'},
+  {id:102,name:'Commander Boxing League - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-19',time:'11:30 AM -  12:29 PM',sH:11,sM:30,eH:12,eM:29,price:'€210',tags:['Commander','Constructed','Hosted','League'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926604&panel-name=Commander-Boxing-League-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeExplore the Magic: The Gathering® | Marvel Super Heroes Commander Party game variant while you create a new Commander deck for the weekend’s Co …'},
+  {id:103,name:'Magic: The Menu with Brian David-Marshall - €185',date:'2026-07-19',time:'11:30 AM -  3:29 PM',sH:11,sM:30,eH:15,eM:29,price:'€185',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926613&panel-name=Magic-The-Menu-with-Brian-David-Marshall-%E2%82%AC185-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeEnjoy Magic: the Menu! This is a multi-course event and the menu is never the same. Feast on play boosters, collector boosters, promos and much …'},
+  {id:104,name:'Pro Tour Qualifier - Gold - Constructed - Modern - Top 32',date:'2026-07-19',time:'11:30 AM -  3:29 PM',sH:11,sM:30,eH:15,eM:29,price:'Free',tags:['Constructed','Modern','Pro Tour Qualifier'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926610&panel-name=Pro-Tour-Qualifier-Gold-Constructed-Modern-Top-32-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe most direct way to the Pro Tour! Join this fun, competitive event which can send you straight to the next Pro Tour!REGISTRATION D …'},
+  {id:105,name:'Limited Championship Qualifier - Gold - €125',date:'2026-07-19',time:'11:30 AM -  4:59 PM',sH:11,sM:30,eH:16,eM:59,price:'€125',tags:['Limited Championship Qualifier','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926609&panel-name=Limited-Championship-Qualifier-Gold-%E2%82%AC125-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin the competition. There’s a qualification waiting for you—if you can build the sealed deck to grasp it.IMPORTANT REGISTRATION DET …'},
+  {id:106,name:'Duel Commander Cup - MagicCon: Amsterdam - Top 8',date:'2026-07-19',time:'11:30 AM -  2:29 PM',sH:11,sM:30,eH:14,eM:29,price:'Free',tags:['Constructed','Cup','cEDH'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926611&panel-name=Duel-Commander-Cup-MagicCon-Amsterdam-Top-8-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe Top 8 Duel Commander Cup players play it out to find the champion!IMPORTANT REGISTRATION DETAILSEntry fees are i …'},
+  {id:107,name:'2HG - Unknown with Gavin Verhey - €200',date:'2026-07-19',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€200',tags:['2HG','Team','Unknown'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926619&panel-name=2HG-Unknown-with-Gavin-Verhey-%E2%82%AC200-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:108,name:'Collector Booster Sealed - Magic: The Gathering  | Marvel Super Heroes - €250',date:'2026-07-19',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€250',tags:['Collector','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926618&panel-name=Collector-Booster-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC250-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOpen the coolest cards with six Collector Boosters full of rare cards, shiny foil cards, and special alt-art, alt-frame cards. Can you make the …'},
+  {id:109,name:'Commander - Full-Box Sealed - Chaos with Ify Nwadiwe and Brian David Gilbert - €180',date:'2026-07-19',time:'12:00 PM -  2:59 PM',sH:12,sM:0,eH:14,eM:59,price:'€180',tags:['Commander','Full Box Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926620&panel-name=Commander-Full-Box-Sealed-Chaos-with-Ify-Nwadiwe-and-Brian-David-Gilbert-%E2%82%AC180-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeIfy Nwadiwe and Brian David Gilbert host a special kind of Commander Sealed event. Build a Commander deck from a whole box worth of boosters an …'},
+  {id:110,name:'Marvel Sealed - Magic: The Gathering | Marvel Super Heroes and Marvel\'s Spider-Man - €40',date:'2026-07-19',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€40',tags:['Sealed','Secret Lair'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926622&panel-name=Marvel-Sealed-Magic-The-Gathering-Marvel-Super-Heroes-and-Marvels-Spider-Man-%E2%82%AC40-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDoes your team have what it takes to conquer this sealed challenge? Build your best deck you can  and battle it out over three rounds.…'},
+  {id:111,name:'Team Trios - Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-19',time:'12:00 PM -  3:59 PM',sH:12,sM:0,eH:15,eM:59,price:'€210',tags:['Full Box Sealed','Team','Trios'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926614&panel-name=Team-Trios-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! Trios events require three (3) players per team. All players should bring a teammate or find teammates …'},
+  {id:112,name:'Constructed - Pauper - Win an Invite to Paupergeddon - €60',date:'2026-07-19',time:'12:00 PM -  6:59 PM',sH:12,sM:0,eH:18,eM:59,price:'€60',tags:['Draft','Pick-Two'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926617&panel-name=Constructed-Pauper-Win-an-Invite-to-Paupergeddon-%E2%82%AC60-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeCome and compete with your best Pauper deck and pave your way to Paupergeddon.IMPORTANT REGISTRATION DETAILSEntry fe …'},
+  {id:113,name:'Battlebox - Sneaky Snacker - Top 8',date:'2026-07-19',time:'12:30 PM -  3:29 PM',sH:12,sM:30,eH:15,eM:29,price:'Free',tags:['Battlebox','Sneaky Snacker','Top 8'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926624&panel-name=Battlebox-Sneaky-Snacker-Top-8-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThis is it, the time to find out who has what it takes to sneaky snatch the trophy. The Top 4 players from each qualifier will face off in the  …'},
+  {id:114,name:'Legacy Cup - MagicCon: Amsterdam - Top 8',date:'2026-07-19',time:'12:30 PM -  3:29 PM',sH:12,sM:30,eH:15,eM:29,price:'Free',tags:['Constructed','Cup','Pauper','Top 8'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926625&panel-name=Legacy-Cup-MagicCon-Amsterdam-Top-8-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeLegacy players join for fun, prizes, bragging rights, and a trophy.REGISTRATION DETAILSQualified players will be adde …'},
+  {id:115,name:'Limited Championship Qualifier - Black - Top 32',date:'2026-07-19',time:'12:30 PM -  4:29 PM',sH:12,sM:30,eH:16,eM:29,price:'Free',tags:['Draft','Limited Championship Qualifier'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926623&panel-name=Limited-Championship-Qualifier-Black-Top-32-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeThe Top 32 clash to find four Limited Championship competitors.IMPORTANT REGISTRATION DETAILSEntry fees are inclusiv …'},
+  {id:116,name:'Savvy Pin Traders - Sealed - Magic: The Gathering  | Marvel Super Heroes featuring a special pin! - €85',date:'2026-07-19',time:'12:30 PM -  1:29 PM',sH:12,sM:30,eH:13,eM:29,price:'€85',tags:['League','Pin Trading'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926616&panel-name=Savvy-Pin-Traders-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-featuring-a-special-pin-%E2%82%AC85-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeVeggie Wagon welcomes you to the market. What will you open? What will you keep? What will you trade away? Can you swap your way into a winning …'},
+  {id:117,name:'2HG - Commander Full-Box Sealed - Magic: The Gathering  | Marvel Super Heroes - €210',date:'2026-07-19',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€210',tags:['2HG','Sealed','Team'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926626&panel-name=2HG-Commander-Full-Box-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC210-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:118,name:'Competitive Draft - Magic: The Gathering  | Marvel Super Heroes - €100',date:'2026-07-19',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'€100',tags:['Draft'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926628&panel-name=Competitive-Draft-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC100-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBring your competitive spirit to this draft prepare to face their strong and the mighty.IMPORTANT REGISTRATION DETAILS< …'},
+  {id:119,name:'Modern Cup - MagicCon: Amsterdam - Top 8 ',date:'2026-07-19',time:'1:00 PM -  4:59 PM',sH:13,sM:0,eH:16,eM:59,price:'Free',tags:['Constructed','Cup','Modern','Top 8'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926627&panel-name=Modern-Cup-MagicCon-Amsterdam-Top-8-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeModern Cup Top 8 players conclude their event for fun, prizes, bragging rights, and a trophy.REGISTRATION DETAILSuali …'},
+  {id:120,name:'Deluxe Sealed - Magic: The Gathering® | Marvel Super Heroes - €90',date:'2026-07-19',time:'1:30 PM -  5:29 PM',sH:13,sM:30,eH:17,eM:29,price:'€90',tags:['Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926630&panel-name=Deluxe-Sealed-Magic-The-Gathering%C2%AE-Marvel-Super-Heroes-%E2%82%AC90-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeBuild the best decks you can from this mix of Collector and Play Boosters in this three-round Sealed event! IMPORTANT REGISTRATION DE …'},
+  {id:121,name:'Turbo - Team Trios - Sealed - Magic: The Gathering  | Marvel Super Heroes - €110',date:'2026-07-19',time:'1:30 PM -  4:55 PM',sH:13,sM:30,eH:16,eM:55,price:'€110',tags:['Sealed','Team','Trios','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926629&panel-name=Turbo-Team-Trios-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC110-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:122,name:'Commander - Precon Battle - Chaos - €95',date:'2026-07-19',time:'2:00 PM -  4:59 PM',sH:14,sM:0,eH:16,eM:59,price:'€95',tags:['Chaos','Commander','Precon'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926631&panel-name=Commander-Precon-Battle-Chaos-%E2%82%AC95-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeDon\'t have a Commander deck? No problem! Receive a random preconstructed Commander deck to keep and battle it out in this multiplayer event.…'},
+  {id:123,name:'Turbo - 2HG - Sealed - Magic: The Gathering  | Marvel Super Heroes - €75',date:'2026-07-19',time:'2:00 PM -  3:59 PM',sH:14,sM:0,eH:15,eM:59,price:'€75',tags:['2HG','Sealed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926632&panel-name=Turbo-2HG-Sealed-Magic-The-Gathering--Marvel-Super-Heroes-%E2%82%AC75-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeOne entry pays for the full team! 2HG events require two (2) players per team. All players should bring a teammate or find teammates. Pl …'},
+  {id:124,name:'All Play - Sealed - Mystery Booster 2 - €70',date:'2026-07-19',time:'2:30 PM -  6:29 PM',sH:14,sM:30,eH:18,eM:29,price:'€70',tags:['All Play','Sealed'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926633&panel-name=All-Play-Sealed-Mystery-Booster-2-%E2%82%AC70-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeHold Nothing Back - As no deck building needed. Unveil the mystery as you crack your packs, shuffle up all the cards, use basic lands from outs …'},
+  {id:125,name:'Lightning Round - Commander - €15',date:'2026-07-19',time:'3:00 PM -  4:59 PM',sH:15,sM:0,eH:16,eM:59,price:'€15',tags:['Commander','Constructed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926635&panel-name=Lightning-Round-Commander-%E2%82%AC15-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeePlay a lightning-quick round of Commander with this fast and broken Commander format!IMPORTANT REGISTRATION DETAILSE …'},
+  {id:126,name:'Turbo - Four-Pack Sealed - Mystery Booster 2 - €50',date:'2026-07-19',time:'3:00 PM -  5:55 PM',sH:15,sM:0,eH:17,eM:55,price:'€50',tags:['Sealed','Turbo'],url:'https://mcamsterdam.mtgfestivals.com/en-us/magic-play/ticketed-play-schedule/ticketed-play-information.html?gtID=926634&panel-name=Turbo-Four-Pack-Sealed-Mystery-Booster-2-%E2%82%AC50-Click-here-for-more-info',desc:'Price inclusive of 21% VAT + €3.50 Service FeeJoin us for one last sealed event with this four-pack Mystery Booster event!IMPORTANT REGISTRATION DETAILSEntry fees …'},
+];
+
+
+const TAG_COLORS = {
+  'Commander':'#4caf50','Commander Party':'#4caf50','Precon':'#4caf50','cEDH':'#4caf50',
+  'Sealed':'#2196f3','Full Box Sealed':'#2196f3','Collector':'#2196f3',
+  'Draft':'#ff9800','Mega-Draft':'#ff9800',
+  'Chaos':'#f44336',
+  'Constructed':'#9c27b0','Standard':'#9c27b0','Modern':'#9c27b0','Legacy':'#9c27b0','Vintage':'#9c27b0','Pauper':'#9c27b0',
+  'Team':'#009688','2HG':'#009688','Trios':'#009688',
+  'Cup':'#ffc107','Top 8':'#ffc107','Pro Tour Qualifier':'#ffc107','Limited Championship Qualifier':'#ffc107',
+  'Unknown':'#e91e63','Hosted':'#e91e63'
+};
+const DEFAULT_COLOR = '#607d8b';
+const FAVORITES = new Set(['Sealed','Commander','Chaos','Draft','Mega-Draft','Commander Party','Precon','Unknown','Hosted']);
+
+const ALL_TAGS = ['2HG','All Play','Battlebox','cEDH','Chaos','Collector','Commander','Commander Party','Constructed','Cup','Draft','FNM','Friday Night Magic','Full Box Sealed','Gauntlet','Grand Melee','Hosted','League','Legacy','Limited Championship Qualifier','Mega-Draft','Mini-masters','Mixed Format','Modern','Pauper','Pick-Two','Pin Trading','Precon','Pro Tour Qualifier','Sealed','Secret Lair','Sneaky Snacker','Standard','Team','Top 8','Trios','Turbo','Unknown','Vintage'];
+
+const GRID_START = 9; // 9 AM
+const GRID_END = 23;  // 11 PM
+const SLOT_H = 40;
+const TOTAL_SLOTS = (GRID_END - GRID_START) * 2;
+
+function tagColor(t) { return TAG_COLORS[t] || DEFAULT_COLOR; }
+function primaryColor(ev) {
+  for (const t of ev.tags) { if (TAG_COLORS[t]) return TAG_COLORS[t]; }
+  return DEFAULT_COLOR;
+}
+
+// State
+let activeDay = '2026-07-17';
+let activeTags = new Set();
+let starredIds = new Set(JSON.parse(localStorage.getItem('starred') || '[]'));
+let starredFilterActive = false;
+
+function saveStarred() {
+  localStorage.setItem('starred', JSON.stringify([...starredIds]));
+  updateStarredCount();
+}
+function toggleStar(id) {
+  if (starredIds.has(id)) starredIds.delete(id);
+  else starredIds.add(id);
+  saveStarred();
+}
+function updateStarredCount() {
+  document.getElementById('starredCount').textContent = '(' + starredIds.size + ')';
+}
+
+// Build time axis
+const timeAxis = document.getElementById('timeAxis');
+const gridLines = document.getElementById('gridLines');
+for (let i = 0; i <= TOTAL_SLOTS; i++) {
+  const h = GRID_START + Math.floor(i / 2);
+  const m = (i % 2) * 30;
+  if (m === 0) {
+    const lbl = document.createElement('div');
+    lbl.className = 'time-label';
+    const hr = h > 12 ? h - 12 : h;
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    lbl.textContent = hr + ':00 ' + ampm;
+    lbl.style.height = SLOT_H + 'px';
+    timeAxis.appendChild(lbl);
+    // half-hour spacer
+    if (i < TOTAL_SLOTS) {
+      const spacer = document.createElement('div');
+      spacer.className = 'time-label';
+      spacer.style.height = SLOT_H + 'px';
+      timeAxis.appendChild(spacer);
+    }
+  }
+  // Grid line
+  const line = document.createElement('div');
+  line.className = 'grid-line ' + (m === 0 ? 'hour' : 'half');
+  line.style.top = (i * SLOT_H) + 'px';
+  gridLines.appendChild(line);
+}
+document.getElementById('gridArea').style.height = (TOTAL_SLOTS * SLOT_H) + 'px';
+
+// Build tag filter buttons
+const tagFiltersEl = document.getElementById('tagFilters');
+ALL_TAGS.forEach(tag => {
+  const btn = document.createElement('div');
+  btn.className = 'tag-btn' + (FAVORITES.has(tag) ? ' fav' : '');
+  btn.textContent = tag;
+  const c = tagColor(tag);
+  btn.style.borderColor = c;
+  btn.style.color = c;
+  btn.dataset.tag = tag;
+  btn.addEventListener('click', () => toggleTag(tag, btn));
+  tagFiltersEl.appendChild(btn);
+});
+
+function toggleTag(tag, btn) {
+  if (activeTags.has(tag)) { activeTags.delete(tag); btn.classList.remove('active'); btn.style.background = ''; }
+  else { activeTags.add(tag); btn.classList.add('active'); btn.style.background = tagColor(tag) + '22'; }
+  render();
+}
+document.getElementById('clearBtn').addEventListener('click', () => {
+  activeTags.clear();
+  starredFilterActive = false;
+  document.getElementById('starredFilterBtn').classList.remove('active');
+  tagFiltersEl.querySelectorAll('.tag-btn').forEach(b => { b.classList.remove('active'); b.style.background = ''; });
+  render();
+});
+
+// Starred filter button
+document.getElementById('starredFilterBtn').addEventListener('click', () => {
+  starredFilterActive = !starredFilterActive;
+  document.getElementById('starredFilterBtn').classList.toggle('active', starredFilterActive);
+  render();
+});
+
+// Day tabs
+document.getElementById('tabs').addEventListener('click', e => {
+  const t = e.target.closest('.tab');
+  if (!t) return;
+  const day = t.dataset.day;
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+
+  if (day === 'cost') {
+    document.querySelector('.cal-wrap').style.display = 'none';
+    document.getElementById('filterBar').style.display = 'none';
+    document.getElementById('costPanel').classList.add('visible');
+    renderCostPanel();
+  } else {
+    activeDay = day;
+    document.querySelector('.cal-wrap').style.display = '';
+    document.getElementById('filterBar').style.display = '';
+    document.getElementById('costPanel').classList.remove('visible');
+    render();
+  }
+});
+
+// Overlap column packing
+function layoutEvents(events) {
+  const sorted = [...events].sort((a, b) => (a.sH * 60 + a.sM) - (b.sH * 60 + b.sM));
+  const columns = []; // each column: array of events with computed end time
+  const evCols = new Map(); // event id -> column index
+  const groups = []; // groups of overlapping events
+
+  // Assign columns
+  sorted.forEach(ev => {
+    const start = ev.sH * 60 + ev.sM;
+    const end = ev.eH * 60 + ev.eM;
+    let placed = false;
+    for (let c = 0; c < columns.length; c++) {
+      const last = columns[c][columns[c].length - 1];
+      const lastEnd = last.eH * 60 + last.eM;
+      if (start >= lastEnd) {
+        columns[c].push(ev);
+        evCols.set(ev.id, c);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      evCols.set(ev.id, columns.length);
+      columns.push([ev]);
+    }
+  });
+
+  // Group overlapping events to determine max columns per group
+  function eventsOverlap(a, b) {
+    const aS = a.sH * 60 + a.sM, aE = a.eH * 60 + a.eM;
+    const bS = b.sH * 60 + b.sM, bE = b.eH * 60 + b.eM;
+    return aS < bE && bS < aE;
+  }
+
+  // Build connected components of overlapping events
+  const visited = new Set();
+  sorted.forEach(ev => {
+    if (visited.has(ev.id)) return;
+    const group = [ev];
+    visited.add(ev.id);
+    let i = 0;
+    while (i < group.length) {
+      const cur = group[i];
+      sorted.forEach(other => {
+        if (!visited.has(other.id) && eventsOverlap(cur, other)) {
+          visited.add(other.id);
+          group.push(other);
+        }
+      });
+      i++;
+    }
+    groups.push(group);
+  });
+
+  // For each group, find max column index
+  const result = [];
+  groups.forEach(group => {
+    let maxCol = 0;
+    group.forEach(ev => { maxCol = Math.max(maxCol, evCols.get(ev.id)); });
+    const numCols = maxCol + 1;
+    group.forEach(ev => {
+      result.push({ ev, col: evCols.get(ev.id), numCols });
+    });
+  });
+  return result;
+}
+
+// Tooltip
+const tooltip = document.getElementById('tooltip');
+let tooltipTimer;
+function showTooltip(ev, rect) {
+  clearTimeout(tooltipTimer);
+  tooltip.querySelector('.tt-name').textContent = ev.name;
+  tooltip.querySelector('.tt-time').textContent = ev.time;
+  tooltip.querySelector('.tt-price').textContent = ev.price;
+  tooltip.querySelector('.tt-desc').textContent = ev.desc;
+  const tagsEl = tooltip.querySelector('.tt-tags');
+  tagsEl.innerHTML = '';
+  ev.tags.forEach(t => {
+    const s = document.createElement('span');
+    s.className = 'tt-tag';
+    const c = tagColor(t);
+    s.style.background = c + '33';
+    s.style.color = c;
+    s.textContent = t;
+    tagsEl.appendChild(s);
+  });
+  tooltip.classList.add('show');
+  // Position
+  const vw = window.innerWidth, vh = window.innerHeight;
+  let left = rect.right + 10;
+  let top = rect.top;
+  tooltip.style.left = '0'; tooltip.style.top = '0';
+  // measure
+  const tw = tooltip.offsetWidth, th = tooltip.offsetHeight;
+  if (left + tw > vw - 10) left = rect.left - tw - 10;
+  if (left < 10) left = 10;
+  if (top + th > vh - 10) top = vh - th - 10;
+  if (top < 10) top = 10;
+  tooltip.style.left = left + 'px';
+  tooltip.style.top = top + 'px';
+}
+function hideTooltip() {
+  tooltipTimer = setTimeout(() => tooltip.classList.remove('show'), 100);
+}
+
+// Render
+function render() {
+  const grid = document.getElementById('gridArea');
+  grid.querySelectorAll('.ev').forEach(el => el.remove());
+
+  let dayEvents = EVENTS.filter(ev => ev.date === activeDay);
+  let filtered;
+  if (activeTags.size === 0) {
+    filtered = dayEvents;
+  } else {
+    filtered = dayEvents.filter(ev => ev.tags.some(t => activeTags.has(t)));
+  }
+  // Apply starred filter
+  if (starredFilterActive) {
+    filtered = filtered.filter(ev => starredIds.has(ev.id));
+  }
+
+  // Count across all days
+  let totalVisible = 0;
+  if (activeTags.size === 0 && !starredFilterActive) totalVisible = EVENTS.length;
+  else {
+    totalVisible = EVENTS.filter(ev => {
+      if (starredFilterActive && !starredIds.has(ev.id)) return false;
+      if (activeTags.size > 0 && !ev.tags.some(t => activeTags.has(t))) return false;
+      return true;
+    }).length;
+  }
+  document.getElementById('evCount').textContent = filtered.length + ' events shown (' + totalVisible + ' total)';
+  updateStarredCount();
+
+  const laid = layoutEvents(filtered);
+  laid.forEach(({ ev, col, numCols }) => {
+    const startMin = (ev.sH - GRID_START) * 60 + ev.sM;
+    const endMin = (ev.eH - GRID_START) * 60 + ev.eM;
+    const top = (startMin / 30) * SLOT_H;
+    const height = Math.max(((endMin - startMin) / 30) * SLOT_H, SLOT_H);
+
+    const colW = 100 / numCols;
+    const left = col * colW;
+
+    const card = document.createElement('div');
+    card.className = 'ev' + (starredIds.has(ev.id) ? ' starred-card' : '');
+    card.style.top = top + 'px';
+    card.style.height = height + 'px';
+    card.style.left = left + '%';
+    card.style.width = 'calc(' + colW + '% - 4px)';
+    card.style.borderLeftColor = starredIds.has(ev.id) ? '#ffc107' : primaryColor(ev);
+
+    // Star button
+    const starEl = document.createElement('div');
+    starEl.className = 'ev-star' + (starredIds.has(ev.id) ? ' starred' : '');
+    starEl.textContent = '★';
+    starEl.title = starredIds.has(ev.id) ? 'Remove from list' : 'Add to list';
+    starEl.addEventListener('click', e => {
+      e.stopPropagation();
+      toggleStar(ev.id);
+      render();
+    });
+
+    const nameEl = document.createElement('div');
+    nameEl.className = 'ev-name';
+    nameEl.style.paddingRight = '16px'; // space for star
+    const link = document.createElement('a');
+    link.href = ev.url;
+    link.target = '_blank';
+    link.textContent = ev.name;
+    link.title = ev.name;
+    nameEl.appendChild(link);
+
+    const timeEl = document.createElement('div');
+    timeEl.className = 'ev-time';
+    timeEl.textContent = ev.time;
+
+    const priceEl = document.createElement('div');
+    priceEl.className = 'ev-price';
+    priceEl.textContent = ev.price;
+
+    const tagsEl = document.createElement('div');
+    tagsEl.className = 'ev-tags';
+    ev.tags.forEach(t => {
+      const pill = document.createElement('span');
+      pill.className = 'ev-tag';
+      const c = tagColor(t);
+      pill.style.background = c + '33';
+      pill.style.color = c;
+      pill.textContent = t;
+      tagsEl.appendChild(pill);
+    });
+
+    card.appendChild(starEl);
+    card.appendChild(nameEl);
+    card.appendChild(timeEl);
+    card.appendChild(priceEl);
+    card.appendChild(tagsEl);
+
+    card.addEventListener('mouseenter', e => showTooltip(ev, card.getBoundingClientRect()));
+    card.addEventListener('mouseleave', hideTooltip);
+    card.addEventListener('click', e => {
+      if (e.target.tagName === 'A' || e.target.classList.contains('ev-star')) return;
+      showTooltip(ev, card.getBoundingClientRect());
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// Cost Panel
+const DAY_LABELS = {'2026-07-17':'Friday Jul 17','2026-07-18':'Saturday Jul 18','2026-07-19':'Sunday Jul 19'};
+
+function renderCostPanel() {
+  const listEl = document.getElementById('costList');
+  const totalEl = document.getElementById('costTotal');
+  listEl.innerHTML = '';
+
+  const starred = EVENTS.filter(ev => starredIds.has(ev.id));
+  if (starred.length === 0) {
+    listEl.innerHTML = '<div class="cost-empty"><div class="ce-icon">★</div>No events starred yet.<br>Star events from the calendar or search below to build your list.</div>';
+    totalEl.style.display = 'none';
+    return;
+  }
+
+  // Group by day
+  const byDay = {};
+  starred.forEach(ev => {
+    if (!byDay[ev.date]) byDay[ev.date] = [];
+    byDay[ev.date].push(ev);
+  });
+
+  let total = 0;
+  ['2026-07-17','2026-07-18','2026-07-19'].forEach(day => {
+    if (!byDay[day]) return;
+    const group = document.createElement('div');
+    group.className = 'cost-day-group';
+    const title = document.createElement('div');
+    title.className = 'cost-day-title';
+    title.textContent = DAY_LABELS[day] + ' (' + byDay[day].length + ')';
+    group.appendChild(title);
+
+    byDay[day].sort((a, b) => (a.sH * 60 + a.sM) - (b.sH * 60 + b.sM));
+    byDay[day].forEach(ev => {
+      const row = document.createElement('div');
+      row.className = 'cost-row';
+
+      const name = document.createElement('div');
+      name.className = 'cr-name';
+      const a = document.createElement('a');
+      a.href = ev.url; a.target = '_blank'; a.textContent = ev.name;
+      name.appendChild(a);
+
+      const time = document.createElement('div');
+      time.className = 'cr-time';
+      time.textContent = ev.time;
+
+      const price = document.createElement('div');
+      price.className = 'cr-price';
+      price.textContent = ev.price;
+
+      const remove = document.createElement('div');
+      remove.className = 'cr-remove';
+      remove.textContent = '✕';
+      remove.title = 'Remove from list';
+      remove.addEventListener('click', () => {
+        starredIds.delete(ev.id);
+        saveStarred();
+        renderCostPanel();
+      });
+
+      row.appendChild(name);
+      row.appendChild(time);
+      row.appendChild(price);
+      row.appendChild(remove);
+      group.appendChild(row);
+
+      // Parse price
+      const m = ev.price.match(/€\s*([\d,.]+)/);
+      if (m) total += parseFloat(m[1].replace(',', '.'));
+    });
+
+    listEl.appendChild(group);
+  });
+
+  totalEl.style.display = '';
+  document.getElementById('costAmount').textContent = '€' + total.toFixed(0);
+}
+
+// Autocomplete for cost search
+const costSearchInput = document.getElementById('costSearch');
+const acDropdown = document.getElementById('acDropdown');
+
+costSearchInput.addEventListener('input', () => {
+  const q = costSearchInput.value.trim().toLowerCase();
+  if (q.length < 2) { acDropdown.classList.remove('show'); return; }
+
+  const matches = EVENTS.filter(ev => ev.name.toLowerCase().includes(q)).slice(0, 15);
+  if (matches.length === 0) { acDropdown.classList.remove('show'); return; }
+
+  acDropdown.innerHTML = '';
+  matches.forEach(ev => {
+    const item = document.createElement('div');
+    item.className = 'ac-item';
+
+    const name = document.createElement('span');
+    name.className = 'ac-name';
+    name.textContent = ev.name;
+
+    const meta = document.createElement('span');
+    meta.className = 'ac-meta';
+    meta.textContent = DAY_LABELS[ev.date] + ' · ' + ev.price;
+
+    const star = document.createElement('span');
+    star.className = 'ac-star' + (starredIds.has(ev.id) ? ' is-starred' : '');
+    star.textContent = starredIds.has(ev.id) ? '★' : '☆';
+
+    item.appendChild(name);
+    item.appendChild(meta);
+    item.appendChild(star);
+
+    item.addEventListener('click', () => {
+      toggleStar(ev.id);
+      // Update dropdown star
+      star.className = 'ac-star' + (starredIds.has(ev.id) ? ' is-starred' : '');
+      star.textContent = starredIds.has(ev.id) ? '★' : '☆';
+      renderCostPanel();
+    });
+
+    acDropdown.appendChild(item);
+  });
+  acDropdown.classList.add('show');
+});
+
+costSearchInput.addEventListener('blur', () => {
+  setTimeout(() => acDropdown.classList.remove('show'), 200);
+});
+costSearchInput.addEventListener('focus', () => {
+  if (costSearchInput.value.trim().length >= 2) costSearchInput.dispatchEvent(new Event('input'));
+});
+
+updateStarredCount();
+
+render();
+</script>
+</body>
+</html>
